@@ -1,0 +1,84 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+    <script src="https://www.google.com/recaptcha/api.js?onload=renderRecaptcha&render=explicit" async defer></script>
+    <script src="/Scripts/jquery-3.4.1.js"></script>
+</head>
+<body>
+    <p>Using ViewBag: @ViewBag.ActionName</p>
+    <p>Using ViewData: @ViewData["number"]</p>
+    <div> 
+        <div id="ReCaptchContainer"></div>
+        <label id="lblMessage" runat="server" clientidmode="static"></label>
+        <br />
+        <button type="button" id="btn_submit">Submit</button>
+    </div>
+</body>
+<script>
+    var site_key = "@System.Configuration.ConfigurationManager.AppSettings["SiteKey"]";
+
+    $(document).ready(function () {
+        console.log('ready');
+    });
+
+    var renderRecaptcha = function () {
+        grecaptcha.render('ReCaptchContainer', {
+            'sitekey': site_key,
+            'callback': reCaptchaCallback,
+            theme: 'light', //light or dark
+            type: 'image',// image or audio
+            size: 'normal'//normal or compact
+        });
+    };
+
+    var reCaptchaCallback = function (response) {
+        if (response !== '') {
+            jQuery('#lblMessage').css('color', 'green').html('Success');
+        }
+    };
+
+    $("#btn_submit").click(function () {
+        var isUserClicked = false;
+        var response;
+        var message = 'Please checck the checkbox';
+        if (typeof (grecaptcha) != 'undefined') {
+            response = grecaptcha.getResponse();
+            if (response.length === 0) {
+                isUserClicked = false;
+                message = 'Captcha verification failed';
+            } else {
+                isUserClicked = true;
+                message = 'Success!';
+            }
+        }
+        jQuery('#lblMessage').html(message);
+        jQuery('#lblMessage').css('color', (message.toLowerCase() == 'success!') ? "green" : "red");
+
+        if (isUserClicked) {
+            var serviceURL = '/Home/GetDatas';
+            var dataObject = {
+                'requestID': '1',
+                'grecaptchaResponse': response
+            }
+            $.ajax({
+                url: serviceURL,
+                type: 'post',
+                dataType: 'json',
+                contentType: 'application/json',
+                data: JSON.stringify(dataObject),
+                success: function (data) {
+                    alert(data.requestID);
+                }
+            });
+        }
+    });
+</script>
+</html>
